@@ -7,21 +7,8 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Dot } from 'recharts';
 import moment from 'moment';
 const AddPortfolio = () => {
-  const CustomDot = (props) => {
-    const { cx, cy, stroke, payload, value } = props;
-  
-    return (
-      <Dot
-        cx={cx}
-        cy={cy}
-        r={4}
-        stroke={stroke}
-        fill={value > 50 ? 'red' : 'green'} // Example of conditional coloring based on value
-      />
-    );
-  };
 
-  const [loading, setLoading] = useState(false);
+ 
 
     const db = firebase.firestore();
     const [showModal, setShowModal] = useState(false);
@@ -65,62 +52,63 @@ const AddPortfolio = () => {
         return () => unsubscribe();
       }, [db]);
 console.log(portfolios)
+    const [portfolioName, setPortfolioName] = useState('');
+    const [portfolioCategory, setPortfolioCategory] = useState('');
+    const [portfoliotype, setPortfolioType] = useState('');
+    const [portfolinoofshare, setPortfolioNoofshare] = useState('');
+    const [portfolioValue, setPortfolioValue] = useState('');
+    const [portfoliocurrentvalue, setPortfoliocurrentvalue] = useState('');
+    const [portfolioImage, setPortfolioImage] = useState(null);
+    const [pitchdeckpdf, setPitchdeckpdf] = useState(null);
+    const [financialpdf, setFinancialpdf] = useState(null);
+    const [portfolioActive, setPortfolioActive] = useState(true);
+    const [loading, setLoading] = useState(false);
  
-const [portfolioName, setPortfolioName] = useState('');
-const [portfolioCategory, setPortfolioCategory] = useState('');
-const [portfoliotype, setPortfolioType] = useState('');
-const [portfolinoofshare, setPortfolioNoofshare] = useState('');
-const [portfolioValue, setPortfolioValue] = useState('');
-const [portfoliocurrentvalue, setPortfoliocurrentvalue] = useState('');
-const [portfolioImage, setPortfolioImage] = useState(null);
-const [pitchdeckpdf, setPitchdeckpdf] = useState(null);
-const [financialpdf, setFinancialpdf] = useState(null);
-const [portfolioActive, setPortfolioActive] = useState(true);
+    const handleSubmit = async () => {
+      setLoading(true);
+      try {
+        // Upload PDF file to Firebase Storage
+        const storageRef = firebase.storage().ref();
+        const pdfFileRef = storageRef.child(`portfolio_pdfs/${pitchdeckpdf.name}`);
+        await pdfFileRef.put(pitchdeckpdf);
+        const pdfDownloadURL = await pdfFileRef.getDownloadURL();
 
-const handleSubmit = async () => {
-  setLoading(true);
-  try {
-    // Upload PDF file to Firebase Storage
-    const storageRef = firebase.storage().ref();
-    const pdfFileRef = storageRef.child(`portfolio_pdfs/${pitchdeckpdf.name}`);
-    await pdfFileRef.put(pitchdeckpdf);
-    const pdfDownloadURL = await pdfFileRef.getDownloadURL();
-
-   
-    const financialpdfpdfFileRef = storageRef.child(`portfolio_pdfs/${financialpdf.name}`);
-    await financialpdfpdfFileRef.put(financialpdf);
-    const financialpdfDownloadURL = await pdfFileRef.getDownloadURL();
-
-    // Upload image file to Firebase Storage
-    const imageRef = storageRef.child(`portfolio_images/${portfolioImage.name}`);
-    await imageRef.put(portfolioImage);
-    const imageDownloadURL = await imageRef.getDownloadURL();
-
-    // Store portfolio data in Firestore with PDF and image URLs
-    await db.collection('portfolios').add({
-      name: portfolioName,
-      category: portfolioCategory,
-      type: portfoliotype,
-      value: portfolioValue,
-      totalshare:portfolinoofshare,
-      active: portfolioActive,
-      currentvalue: portfoliocurrentvalue,
-      PITCHDECKPDF: pdfDownloadURL, // Store PDF download URL
-      FINANCIALPDF: pdfDownloadURL, // Store PDF download URL
-      logo: imageDownloadURL, // Store image download URL
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-
-    toast.success('Portfolio added successfully!');
-    setShowModal(false);
-  } catch (error) {
-    console.error('Error adding portfolio: ', error);
-    toast.error('Failed to add portfolio. Please try again.');
-  } finally {
-    setLoading(false);
-    closeModal();
-  }
-};
+       
+        const financialpdfpdfFileRef = storageRef.child(`portfolio_pdfs/${financialpdf.name}`);
+        await financialpdfpdfFileRef.put(financialpdf);
+        const financialpdfDownloadURL = await pdfFileRef.getDownloadURL();
+    
+        // Upload image file to Firebase Storage
+        const imageRef = storageRef.child(`portfolio_images/${portfolioImage.name}`);
+        await imageRef.put(portfolioImage);
+        const imageDownloadURL = await imageRef.getDownloadURL();
+    
+        // Store portfolio data in Firestore with PDF and image URLs
+        await db.collection('portfolios').add({
+          name: portfolioName,
+          category: portfolioCategory,
+          type: portfoliotype,
+          value: portfolioValue,
+          totalshare:portfolinoofshare,
+          active: portfolioActive,
+          currentvalue: portfoliocurrentvalue,
+          PITCHDECKPDF: pdfDownloadURL, // Store PDF download URL
+          FINANCIALPDF: pdfDownloadURL, // Store PDF download URL
+          logo: imageDownloadURL, // Store image download URL
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+    
+        toast.success('Portfolio added successfully!');
+        setShowModal(false);
+      } catch (error) {
+        console.error('Error adding portfolio: ', error);
+        toast.error('Failed to add portfolio. Please try again.');
+      } finally {
+        setLoading(false);
+        closeModal();
+      }
+    };
+    
     
       const formatDate = (timestampSeconds) => {
         const date = new Date(timestampSeconds * 1000); // Convert seconds to milliseconds
@@ -173,67 +161,6 @@ const handleSubmit = async () => {
     }));
   };
 
-
-
-  const handleReplaceImage = async (e) => {
-    const { files } = e.target;
-    if (files.length === 0) return;
-
-    const storage = firebase.storage();
-    const storageRef = storage.ref();
-    const logo = files[0];
-    const frontImageRef = storageRef.child(logo.name);
-
-    try {
-      await frontImageRef.put(logo);
-      const frontImageUrl = await frontImageRef.getDownloadURL();
-      setEditedportfolios({ ...editedportfolios, logo: frontImageUrl });
-      toast.success("New image uploaded successfully!");
-    } catch (error) {
-      console.error("Error uploading new image: ", error);
-      toast.error("Error uploading new image. Please try again.");
-    }
-  };
-  const handleReplacepitchdeskpdf = async (e) => {
-    const { files } = e.target;
-    if (files.length === 0) return;
-
-    const storage = firebase.storage();
-    const storageRef = storage.ref();
-    const PITCHDECKPDF = files[0];
-    const frontImageRef = storageRef.child(editedportfolios.PITCHDECKPDF);
-
-    try {
-      await frontImageRef.put(PITCHDECKPDF);
-      const frontImageUrl = await frontImageRef.getDownloadURL();
-      setEditedportfolios({ ...editedportfolios, PITCHDECKPDF: frontImageUrl });
-      toast.success("New Pitchdesk Pdf uploaded successfully!");
-    } catch (error) {
-      console.error("Error uploading new image: ", error);
-      toast.error("Error uploading new image. Please try again.");
-    }
-  };
-
-  const handleReplacefinancialpdf = async (e) => {
-    const { files } = e.target;
-    if (files.length === 0) return;
-
-    const storage = firebase.storage();
-    const storageRef = storage.ref();
-    const FINANCIALPDF = files[0];
-    const frontImageRef = storageRef.child(editedportfolios.FINANCIALPDF);
-
-    try {
-      await frontImageRef.put(FINANCIALPDF);
-      const frontImageUrl = await frontImageRef.getDownloadURL();
-      setEditedportfolios({ ...editedportfolios, FINANCIALPDF: frontImageUrl });
-      toast.success("New Financial Pdf uploaded successfully!");
-    } catch (error) {
-      console.error("Error uploading new image: ", error);
-      toast.error("Error uploading new image. Please try again.");
-    }
-  };
-
   const handleEditSubmit = async (event) => {
     event.preventDefault();
     try {
@@ -255,12 +182,7 @@ const handleSubmit = async () => {
         await portfolioRef.update({
           name: editedportfolios.name,
           value: editedportfolios.value,
-          FINANCIALPDF: editedportfolios.FINANCIALPDF,
-  PITCHDECKPDF: editedportfolios.PITCHDECKPDF,
-  logo: editedportfolios.logo,
-  totalshare: editedportfolios.totalshare,
-  category: editedportfolios.category,
-  type: editedportfolios.type,
+          PDF: editedportfolios.PDF,
           currentvalue: editedportfolios.currentvalue,
           active: editedportfolios.active,
           historyvalue: updatedHistoryValue
@@ -268,13 +190,23 @@ const handleSubmit = async () => {
   
         setShowEditModal(false);
         setEditedportfolios(null);
-        toast.success("Changes saved successfully!");
+        toast.success("Changes saved successfully!", {
+          position: toast.POSITION.BOTTOM_RIGHT,
+          autoClose: 3000,
+          hideProgressBar: true,
+          closeOnClick: true,
+        });
         // Reload the page after successful submission
         window.location.reload();
       }
     } catch (error) {
       console.error("Error saving changes:", error);
-      toast.error("An error occurred while saving changes.");
+      toast.error("An error occurred while saving changes.", {
+        position: toast.POSITION.BOTTOM_RIGHT,
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+      });
     }
   };
   
@@ -313,25 +245,7 @@ const handleSubmit = async () => {
   // Calculate total number of pages
   const totalPages = Math.ceil(portfolios.length / itemsPerPage);
  
-  const [showGraph, setShowGraph] = useState(false);
-  const [graphData, setGraphData] = useState([]);
 
-  // Function to fetch and prepare data for the graph
-  const fetchGraphData = (portfolioId) => {
-    const portfolio = portfolios.find((portfolio) => portfolio.id === portfolioId);
-    if (portfolio && portfolio.historyvalue) {
-      const formattedData = portfolio.historyvalue.map((item) => ({
-        datetime: item.datetime,
-        value: item.value,
-      }));
-      setGraphData(formattedData);
-      setShowGraph(true);
-    }
-  };
-
-  const closeGraphModal = () => {
-    setShowGraph(false);
-  }; 
   return (
     <div className='bg-white min-h-screen' >
  {loading ? (
@@ -345,8 +259,8 @@ const handleSubmit = async () => {
     ) : (
 
         <div class="lg:ml-64 overflow-x-auto py-8">
-             {/* Add portfolio Modal */}
-             {showModal && (
+          {/* Add portfolio Modal */}
+        {showModal && (
   <div className="fixed z-10 inset-0 overflow-y-auto">
     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
       {/* Background overlay */}
@@ -553,31 +467,14 @@ const handleSubmit = async () => {
             <thead className="whitespace-nowrap">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  logo
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
                   Portfolio Name
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Portfolio Category
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Portfolio Type
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Enter total share
-                </th>
+               
                 <th className="px-6 py-3 text-left text-sm font-semibold text-black">
                   Portfolio Value
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-black">
                   Portfolio Current Value
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Change PITCHDECK PDF
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Change Financial PDF
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-black">
                   Active
@@ -594,36 +491,6 @@ const handleSubmit = async () => {
             <tbody className="whitespace-nowrap">
               <tr className="odd:bg-blue-50">
                 <td className="px-6 py-3 text-sm">
-                {editedportfolios.logo && (
-              <div>
-                <img
-                  className="w-8 h-8 object-cover mb-2"
-                  src={editedportfolios.logo}
-                  alt={editedportfolios.name}
-                />
-                {/* <button
-                  onClick={handleDeleteImage}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-300 rounded-md mr-2"
-                >
-                  Delete Image
-                </button> */}
-              </div>
-            )}
-
-            {/* Input to upload a new image */}
-            <div>
-              <label className="block text-sm font-medium text-black">
-                Change logo
-              </label>
-              <input
-                type="file"
-                onChange={handleReplaceImage}
-                className="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-                </td>
-             
-                <td className="px-6 py-3 text-sm">
                   <div className="flex items-center cursor-pointer">
                     <div className="ml-4">
                     <input type="text" placeholder='Enter Portfolio Name'   value={editedportfolios.name}
@@ -633,39 +500,6 @@ const handleSubmit = async () => {
                     className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
                     </div>
                   </div>
-                </td>
-                <td className="px-6 py-3">
-                          <select
-                            value={editedportfolios.category}
-                            onChange={(e) =>
-                              setEditedportfolios({ ...editedportfolios, category: e.target.value })
-                            } 
-                            className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500"
-                          >
-                            <option value="">Select Category</option>
-                            <option value="Popular">Popular</option>
-                            <option value="Trending">Trending</option>
-                            <option value="Recent">Recent</option>
-                            <option value="Hot">Hot</option>
-                            <option value="Unicorn">Unicorn</option>
-                          </select>
-                        </td>
-                <td className="px-6 py-3 text-sm">
-                  <div className="flex items-center cursor-pointer">
-                    <div className="ml-4">
-                    <input type="text" placeholder='Enter Portfolio Type'   value={editedportfolios.type}
-                    onChange={(e) =>
-                      setEditedportfolios({ ...editedportfolios, type: e.target.value })
-                    } className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-6 py-3 text-sm">
-                <input placeholder='Enter Portfolio No. of Share' type="text"  value={editedportfolios.totalshare}
-                    onChange={(e) =>
-                      setEditedportfolios({ ...editedportfolios, totalshare: e.target.value })
-                    } className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
                 </td>
                
                 <td className="px-6 py-3 text-sm">
@@ -679,38 +513,6 @@ const handleSubmit = async () => {
                     onChange={(e) =>
                       setEditedportfolios({ ...editedportfolios, currentvalue: e.target.value })
                     }  className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                </td>
-                <td className="px-6 py-3 text-sm">
-                
-
-         
-            <div>
-              <label className="block text-sm font-medium text-black">
-                Change PITCHDECK PDF
-              </label>
-              <input
-                type="file"
-                accept=".pdf" 
-                onChange={handleReplacepitchdeskpdf}
-                className="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-                </td>
-                <td className="px-6 py-3 text-sm">
-                
-
-         
-            <div>
-              <label className="block text-sm font-medium text-black">
-                Change FINANCIAL PDF
-              </label>
-              <input
-                type="file"
-                accept=".pdf" 
-                onChange={handleReplacefinancialpdf}
-                className="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
                 </td>
                 <td className="px-6 py-3">
   <label className="relative cursor-pointer">
@@ -771,36 +573,7 @@ const handleSubmit = async () => {
 
 
       
-{showGraph && (
-  <div className="flex flex-col items-center justify-center">
-    <div className="w-full md:w-3/4 lg:w-1/2 bg-white rounded-lg shadow-lg">
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Portfolio Graph</h2>
-        <div className=" px-4 py-3 flex justify-end">
-          <button
-            type="button"
-            onClick={closeGraphModal}
-            className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            Close
-          </button>
-        </div>
-        <div style={{ width: '100%', height: 400 }}>
-          <ResponsiveContainer>
-            <LineChart data={graphData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="datetime" tickFormatter={(tick) => moment(tick).format("M/D/YYYY h:mm:ss A")} /> {/* Format datetime */}
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#FF5733" strokeWidth={2} dot={<CustomDot />} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+
 
 
         <div className="flex justify-between items-center mb-4">
@@ -866,9 +639,9 @@ const handleSubmit = async () => {
                                 </div>
                                 <div>
                                   <p class="font-semibold">   {portfolio.name}</p>
-                                  <p class="text-xs text-gray-600 dark:text-gray-400">type:{portfolio.type}</p>
-                                  <p class="text-xs text-gray-600 dark:text-gray-400">category:{portfolio.category}</p>
-                                  <p class="text-xs text-gray-600 dark:text-gray-400">total share:{portfolio.totalshare}</p>
+                                  <p class="text-xs text-gray-600 dark:text-gray-400">{portfolio.type}</p>
+                                  <p class="text-xs text-gray-600 dark:text-gray-400">{portfolio.category}</p>
+                                  <p class="text-xs text-gray-600 dark:text-gray-400">{portfolio.totalshare}</p>
                                 </div>
                               </div>
                             </td>

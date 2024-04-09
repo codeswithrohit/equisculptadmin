@@ -18,8 +18,16 @@ const Index = () => {
   const [showModal, setShowModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // State variable to check if the user is an admin
   const [adminData, setAdminData] = useState([]);
+  const [bankDetails, setBankDetails] = useState({
+    BankName: '',
+    AccountNo: '',
+    AccountHolderName: '',
+    IFSCCode: '',
+  });
+
   const openBankModal = (id) => {
-    setUserId(id); // Set the userId when opening the modal
+    setUserId(id);
+    fetchBankDetails(id);
     setShowModal(true);
   };
 
@@ -230,31 +238,36 @@ const Index = () => {
   const [AccountHolderName, setAccountHolderName] = useState('');
   const [IFSCCode, setIFSCCode] = useState('');
   const [loading, setLoading] = useState(false);
- 
-  const handleSubmit = async () => {
-    setLoading(true);
-    console.log(userId)
+  const fetchBankDetails = async (userId) => {
     try {
-      const db = firebase.firestore();
-      // Get a reference to the subcollection
       const userRef = db.collection('users').doc(userId).collection('Assign_Bank_Details');
-      // Add a new document to the subcollection with the bank details
-      await userRef.add({
-        BankName: BankName,
-        AccountNo: AccountNo,
-        AccountHolderName: AccountHolderName,
-        IFSCCode: IFSCCode,
-      });
-      
-      toast.success('Bank Details added successfully!');
+      const snapshot = await userRef.get();
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        setBankDetails(data);
+      }
+    } catch (error) {
+      console.error('Error fetching bank details:', error);
+      toast.error('Failed to fetch bank details. Please try again.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const userRef = db.collection('users').doc(userId).collection('Assign_Bank_Details').doc(userId);
+      await userRef.set(bankDetails, { merge: true });
+      toast.success('Bank details updated successfully!');
       setShowModal(false);
     } catch (error) {
-      console.error('Error adding bankdetails: ', error);
-      toast.error('Failed to add bank details. Please try again.');
+      console.error('Error updating bank details:', error);
+      toast.error('Failed to update bank details. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+  
+
 
   return (
     <div className='bg-white min-h-screen' >
@@ -269,91 +282,87 @@ const Index = () => {
 
 
 {showModal && (
-  <div className="fixed z-10 inset-0 overflow-y-auto">
-    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      {/* Background overlay */}
-      <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-        <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-      </div>
-
-      {/* Modal content */}
-      <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-      <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-        {/* Modal content goes here */}
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full bg-white font-[sans-serif]">
-            <thead className="whitespace-nowrap">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Bank Name
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Account Number
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                  Account Holder Name
-                </th>
-               
-                <th className="px-6 py-3 text-left text-sm font-semibold text-black">
-                 IFSC Code
-                </th>
-            
-                
-               
-              </tr>
-            </thead>
-            <tbody className="whitespace-nowrap">
-              <tr className="odd:bg-blue-50">
-                <td className="px-6 py-3 text-sm">
-                  <div className="flex items-center cursor-pointer">
-                    <div className="ml-4">
-                    <input type="text" placeholder='Enter Bank Name'   value={BankName}
-                                onChange={(e) => setBankName(e.target.value)} className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                    </div>
-                  </div>
-                </td>
-               
-                <td className="px-6 py-3 text-sm">
-                <input placeholder='Enter Account Number' type="text" value={AccountNo}
-                            onChange={(e) => setAccountNo(e.target.value)} className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                </td>
-                <td className="px-6 py-3 text-sm">
-                <input placeholder='Enter Account Holder Name' type="text" value={AccountHolderName}
-                            onChange={(e) => setAccountHolderName(e.target.value)} className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                </td>
-              
-                <td className="px-6 py-3 text-sm">
-                <input placeholder='Enter IFSC CODE' type="text" value={IFSCCode}
-                            onChange={(e) => setIFSCCode(e.target.value)} className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500" />
-                </td>
-                
-               
-                
-               
-                <td className="px-6 py-3 text-sm">
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full bg-white font-[sans-serif]">
+                  <thead className="whitespace-nowrap">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-black">Bank Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-black">Account Number</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-black">Account Holder Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-black">IFSC Code</th>
+                    </tr>
+                  </thead>
+                  <tbody className="whitespace-nowrap">
+                    <tr className="odd:bg-blue-50">
+                      <td className="px-6 py-3 text-sm">
+                      <input
+                type="text"
+                placeholder='Enter Bank Name'
+                value={bankDetails.BankName}
+                onChange={(e) => setBankDetails({ ...bankDetails, BankName: e.target.value })}
+                className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500"
+              />
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <input
+                          placeholder='Enter Account Number'
+                          type="text"
+                          value={bankDetails.AccountNo}
+                          onChange={(e) => setBankDetails({ ...bankDetails, AccountNo: e.target.value })}
+                          className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <input
+                          placeholder='Enter Account Holder Name'
+                          type="text"
+                          value={bankDetails.AccountHolderName}
+                          onChange={(e) => setBankDetails({ ...bankDetails, AccountHolderName: e.target.value })}
+                          className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <input
+                          placeholder='Enter IFSC CODE'
+                          type="text"
+                          value={bankDetails.IFSCCode}
+                          onChange={(e) => setBankDetails({ ...bankDetails, IFSCCode: e.target.value })}
+                          className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring focus:border-blue-500"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                disabled={loading} // Disable the button when loading
+              >
+                {loading ? 'Loading...' : 'Submit'} {/* Show loading text when loading */}
+              </button>
+            </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className={`px-4 py-2 bg-blue-500 text-white rounded-lg ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            {loading ? 'Loading...' : 'Submit'}
-                          </button>
-                </td>
-               
-              </tr>
-              {/* Additional table rows go here */}
-            </tbody>
-          </table>
+                  type="button"
+                  onClick={closeBankModal}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button type="button" onClick={closeBankModal} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
       <div class="h-full  mb-10 md:ml-64">
     
       {loadingUserData ? (
@@ -476,6 +485,8 @@ const Index = () => {
                                   <p class="font-semibold">   {user.name}</p>
                                   <p class="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
                                   <p class="text-xs text-gray-600 dark:text-gray-400">{user.phoneNumber}</p>
+                                  <p class="text-xs text-gray-600 dark:text-gray-400">Earn Reward: { user.earnPrice || '0' }</p>
+
                                 </div>
                               </div>
                             </td>
